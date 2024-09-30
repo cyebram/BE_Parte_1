@@ -111,13 +111,107 @@ ggplotly(barplot_species)
 
 ### island
 
+```{r}
+#| code-fold: true
+barplot_island <- ggplot(datos) +
+  geom_bar(aes(island, fill=island), color="black", show.legend = FALSE) +
+  labs(
+    title = "Island",
+    x = "Island", y = "Count",
+    fill = "Island"
+  ) +
+  scale_fill_excel_new()+
+  theme_bw()+
+  theme(
+    #legend.position="top",
+    #legend.position = c(.95, .95),
+    #legend.justification = c("right", "top"),
+    #legend.box.just = "right",
+    legend.title = element_text(size=13, face="bold"),
+    legend.text = element_text(size=13),
+    plot.title = element_text(size=15, face="bold"),
+    plot.subtitle = element_text(size=13),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    axis.title.x = element_text(face="bold", size=13),
+    axis.title.y = element_text(face="bold", size=13)
+  )
+
+barplot_island
+
+```
+
 
 
 ### sex
 
 
+```{r}
+#| code-fold: true
+barplot_sex <- ggplot(datos |> filter(!is.na(sex))) +
+  geom_bar(aes(sex, fill=sex), color="black", show.legend = FALSE) +
+  labs(
+    title = "Sex",
+    x = "Sex", y = "Count",
+    fill = "Sex"
+  ) +
+  scale_fill_colorblind()+
+  theme_bw()+
+  theme(
+    #legend.position="top",
+    #legend.position = c(.95, .95),
+    #legend.justification = c("right", "top"),
+    #legend.box.just = "right",
+    legend.title = element_text(size=13, face="bold"),
+    legend.text = element_text(size=13),
+    plot.title = element_text(size=15, face="bold"),
+    plot.subtitle = element_text(size=13),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    axis.title.x = element_text(face="bold", size=13),
+    axis.title.y = element_text(face="bold", size=13)
+  )
+
+barplot_sex
+
+
+```
+
+
 
 ### year
+
+
+```{r}
+#| code-fold: true
+barplot_year <- ggplot(datos) +
+  geom_bar(aes(year_factor, fill=year_factor), color="black", show.legend = FALSE) +
+  labs(
+    title = "Year",
+    x = "Year", y = "Count",
+    fill = "Year"
+  ) +
+  scale_fill_economist()+
+  theme_bw()+
+  theme(
+    #legend.position="top",
+    #legend.position = c(.95, .95),
+    #legend.justification = c("right", "top"),
+    #legend.box.just = "right",
+    legend.title = element_text(size=13, face="bold"),
+    legend.text = element_text(size=13),
+    plot.title = element_text(size=15, face="bold"),
+    plot.subtitle = element_text(size=13),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    axis.title.x = element_text(face="bold", size=13),
+    axis.title.y = element_text(face="bold", size=13)
+  )
+
+barplot_year
+
+
+```
 
 
 
@@ -129,7 +223,36 @@ ggplotly(barplot_species)
 Posteriormente exploraremos con más detalle las posibles relaciones entre variables categóricas.
 
 
+```{r}
+#| code-fold: true
+barplot_island_species <- ggplot(datos) +
+  geom_bar(aes(island, fill=species), color="black", show.legend = TRUE) +
+  labs(
+    title = "Island-Species",
+    x = "Island", y = "Count",
+    fill = "Species"
+  ) +
+  scale_fill_colorblind()+
+  theme_bw()+
+  theme(
+    #legend.position="top",
+    #legend.position = c(.95, .95),
+    #legend.justification = c("right", "top"),
+    #legend.box.just = "right",
+    legend.title = element_text(size=13, face="bold"),
+    legend.text = element_text(size=13),
+    plot.title = element_text(size=15, face="bold"),
+    plot.subtitle = element_text(size=13),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    axis.title.x = element_text(face="bold", size=13),
+    axis.title.y = element_text(face="bold", size=13)
+  )
 
+barplot_island_species
+
+ggplotly(barplot_island_species)
+```
 
 
 ## Gráfica de sectores (pie chart)
@@ -170,7 +293,7 @@ Usando `plotrix`
 ```{r}
 #| code-fold: true
 
-pie3D(data_species$Conteo, col= hcl.colors(length(data_species$Conteo), "Spectral"), shade = 0.5, labels= data_species$species, explode = 0.2, theta = 1.5)
+pie3D(data_species$Conteo, col= hcl.colors(length(data_species$Conteo), "Spectral"), shade = 0.5, labels= data_species$species)
 ```
 
 
