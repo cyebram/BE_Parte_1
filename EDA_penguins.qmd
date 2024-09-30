@@ -1,0 +1,349 @@
+---
+title: "Exploratory Data Analysis"
+format: html
+editor: visual
+---
+
+```{r}
+#| code-fold: true
+#| label: load-packages
+#| warning: false
+#| message: false
+
+
+library(tidyverse)
+library(palmerpenguins)
+library(ggthemes)
+library(RColorBrewer)
+library(plotly)
+library(pheatmap)
+library(corrplot)
+library(plotrix)
+library(tastypie)
+```
+
+
+
+
+
+# Importar datos e identificar variables
+
+```{r}
+#| code-fold: true
+
+data("penguins")
+datos <- penguins
+head(datos)
+glimpse(datos)
+```
+
+
+
+
+
+
+**Variables cualitativas (categóricas o factores):**
+
+
+
+**Variables cuantitativas:**
+
+
+# Resumen estadístico (Preliminar)
+
+```{r}
+#| code-fold: true
+
+summary(datos)
+
+```
+
+
+## Resumen estadístico (*year factor*)
+
+
+```{r}
+#| code-fold: true
+
+datos$year_factor <- factor(datos$year)
+summary(datos)
+```
+
+# Distribución de variables cualitativas
+
+## Gráfica de barras
+
+### species
+
+
+```{r}
+#| code-fold: true
+barplot_species <- ggplot(datos) +
+  geom_bar(aes(species, fill=species), color="black", show.legend = FALSE) +
+  labs(
+    title = "Species",
+    x = "Species", y = "Count",
+    fill = "Species"
+  ) +
+  scale_fill_colorblind()+
+  theme_bw()+
+  theme(
+    #legend.position="top",
+    #legend.position = c(.95, .95),
+    #legend.justification = c("right", "top"),
+    #legend.box.just = "right",
+    legend.title = element_text(size=13, face="bold"),
+    legend.text = element_text(size=13),
+    plot.title = element_text(size=15, face="bold"),
+    plot.subtitle = element_text(size=13),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    axis.title.x = element_text(face="bold", size=13),
+    axis.title.y = element_text(face="bold", size=13)
+  )
+
+barplot_species
+
+ggplotly(barplot_species)
+```
+
+
+
+### island
+
+
+
+### sex
+
+
+
+### year
+
+
+
+
+
+
+
+
+Posteriormente exploraremos con más detalle las posibles relaciones entre variables categóricas.
+
+
+
+
+
+## Gráfica de sectores (pie chart)
+
+### species
+
+```{r}
+#| code-fold: true
+
+data_species <- datos |> dplyr::select(species) |> group_by(species) |> summarise(Conteo=n())
+data_species <- data_species |> mutate(perc=Conteo/sum(Conteo)*100)
+
+pie_species <- ggplot(data_species, aes(x="", y=perc, fill=species))+
+        geom_bar(width = 1,color="black",  stat = "identity")+
+        coord_polar("y", start=0, direction = 1)+
+        scale_fill_colorblind()+
+        theme_minimal()+
+  theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  panel.border = element_blank(),
+  panel.grid=element_blank(),
+  axis.ticks = element_blank(),
+  plot.title=element_text(size=14, face="bold")
+  )
+
+pie_species
+
+```
+
+
+
+Usando `plotrix`
+
+
+```{r}
+#| code-fold: true
+
+pie3D(data_species$Conteo, col= hcl.colors(length(data_species$Conteo), "Spectral"), shade = 0.5, labels= data_species$species, explode = 0.2, theta = 1.5)
+```
+
+
+Usando `tastypie`
+
+
+
+```{r}
+#| code-fold: true
+
+pie_bake(data=data_species |> dplyr::select(species, Conteo), template="basic4", perc=TRUE, group_name = "Species")
+```
+
+
+
+# Distribución de variables cuantitativas
+
+
+## Histogramas
+
+
+
+```{r}
+#| code-fold: true
+
+
+num_var <- dplyr::select(datos, where(is.numeric), -year) |> names() 
+
+for (hvar in num_var) {
+grafica <- ggplot(datos)+
+      geom_histogram(aes(eval(as.name(hvar)), fill=species), color='gray')+ 
+        labs(x=hvar)+
+        scale_fill_colorblind()+
+        theme_bw()
+        print(grafica)
+        
+}
+
+
+
+```
+
+
+Elaboramos un histrograma con mayor detalle:
+
+```{r}
+#| code-fold: true
+
+hist_body_mass <- ggplot(datos) +
+  geom_histogram(aes(body_mass_g, fill = species), color="black") +
+  labs(
+    title = "Body mass distribution",
+    x = "Body mass (mm)", y = "Count",
+    fill = "Species"
+  ) +
+  scale_fill_brewer(palette = "Spectral")+
+  theme_bw()+
+  theme(
+    #legend.position="top",
+    #legend.position = c(.95, .95),
+    #legend.justification = c("right", "top"),
+    #legend.box.just = "right",
+    legend.title = element_text(size=13, face="bold"),
+    legend.text = element_text(size=13),
+    plot.title = element_text(size=15, face="bold"),
+    plot.subtitle = element_text(size=13),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    axis.title.x = element_text(face="bold", size=13),
+    axis.title.y = element_text(face="bold", size=13)
+  )
+
+hist_body_mass
+
+ggplotly(hist_body_mass)
+
+```
+
+
+
+
+
+## Gráficas de densidad
+
+
+
+```{r}
+#| code-fold: true
+
+for (hvar in num_var) {
+  
+
+grafica <- ggplot(datos)+
+      geom_density(aes(eval(as.name(hvar)), fill=species, color=species), alpha=0.4)+
+        labs(x=hvar)+
+        theme_bw()
+        print(grafica)
+        
+        }
+
+```
+
+
+Elaboramos una gráfica de densidad con mayor detalle:
+
+```{r}
+#| code-fold: true
+
+density_body_mass <- ggplot(datos) +
+  geom_density(aes(body_mass_g, fill=species, color=species), alpha=0.5) +
+  labs(
+    title = "Body mass distribution",
+    x = "Body mass (mm)", y = "Density",
+    fill = "Species", color="Species"
+  ) +
+  scale_fill_manual(values = c("deepskyblue", "gold", "deeppink"))+
+  scale_color_manual(values = c("deepskyblue", "gold", "deeppink"))+
+  theme_bw()+
+  theme(
+    #legend.position="top",
+    #legend.position = c(.95, .95),
+    #legend.justification = c("right", "top"),
+    #legend.box.just = "right",
+    legend.title = element_text(size=13, face="bold"),
+    legend.text = element_text(size=13),
+    plot.title = element_text(size=15, face="bold"),
+    plot.subtitle = element_text(size=13),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    axis.title.x = element_text(face="bold", size=13),
+    axis.title.y = element_text(face="bold", size=13)
+  )
+
+density_body_mass
+
+#ggplotly(density_body_mass)
+
+```
+
+
+# Boxplots
+
+```{r}
+#| code-fold: true
+
+
+for (val_y in num_var) {
+  box_graf <- ggplot(datos)+
+    geom_boxplot(aes(x=1, y=eval(as.name(val_y))), show.legend = FALSE)+
+    #geom_jitter(aes(x=species, y=eval(as.name(val_y)) ), color="firebrick", alpha=0.5)+
+    #stat_summary(aes(x=species, y=eval(as.name(val_y))),fun.y=mean, geom="point", shape=20, size=5, color="red", fill="red") +
+    labs(y=val_y)+
+    theme_bw()
+  
+  print(box_graf)
+}
+
+
+
+
+
+```
+
+Otra alternativa:
+
+
+```{r}
+#| code-fold: true
+
+ggplot(datos)+
+  geom_violin(aes(x=species, y=body_mass_g, fill=species), show.legend = FALSE, draw_quantiles = c(0.25, 0.5, 0.75), color="black")+
+  geom_jitter(aes(x=species, y=body_mass_g), show.legend = FALSE)+
+  theme_bw()
+```
+
+
