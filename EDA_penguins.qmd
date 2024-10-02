@@ -415,7 +415,7 @@ density_body_mass <- ggplot(datos) +
   geom_density(aes(body_mass_g, fill=species, color=species), alpha=0.5) +
   labs(
     title = "Body mass distribution",
-    x = "Body mass (mm)", y = "Density",
+    x = "Body mass (gr)", y = "Density",
     fill = "Species", color="Species"
   ) +
   scale_fill_manual(values = c("deepskyblue", "gold", "deeppink"))+
@@ -505,7 +505,7 @@ for (val_x in num_var[-length(num_var)]) {
     
   scatter_list[[j]] <- ggplot(datos)+
     geom_point(aes(x = eval(as.name(val_x)), y = eval(as.name(val_y)), color = species)) +
-    geom_smooth(aes(x = eval(as.name(val_x)), y = eval(as.name(val_y))), method = "lm") +
+    geom_smooth(aes(x = eval(as.name(val_x)), y = eval(as.name(val_y)), color=species), method = "lm", show.legend = TRUE) +
     labs(x = val_x, y = val_y, color = "Species") +
     scale_color_colorblind()+
     theme_bw()
@@ -837,7 +837,7 @@ datos_alluvia <- datos |> filter(!is.na(sex)) |>
   group_by(species, island, sex) |> 
   summarize(frequency = n(), .groups = "drop")
 
-ggplot(datos_alluvia, aes(y = frequency, axis1 = species, axis2 = island, axis4 = sex)) +
+ggplot(datos_alluvia, aes(y = frequency, axis1 = species, axis2 = island, axis3 = sex)) +
   geom_alluvium(aes(fill = species), width = 1/3, color = "black") +
   geom_stratum(width = 1/3, fill = "black", color = "grey") +
   geom_text(stat = "stratum", aes(label = after_stat(stratum)), color = "white", size = 3) +
@@ -855,7 +855,7 @@ Previamente ya habíamos realizado las gráficas de densidad por especie para ca
 ### Boxplots
 
 
-## Boxplots
+
 
 ```{r}
 #| code-fold: true
@@ -863,9 +863,9 @@ Previamente ya habíamos realizado las gráficas de densidad por especie para ca
 
 for (val_y in num_var) {
   box_graf <- ggplot(datos)+
-    geom_boxplot(aes(x=species, y=eval(as.name(val_y)), fill = island), show.legend = TRUE)+
+    geom_boxplot(aes(x=species, y=eval(as.name(val_y)), color = island), show.legend = TRUE)+
     #geom_jitter(aes(x=species, y=eval(as.name(val_y)) ), color="firebrick", alpha=0.5)+
-    #stat_summary(aes(x=species, y=eval(as.name(val_y))),fun.y=mean, geom="point", shape=20, size=5, color="red", fill="red") +
+    stat_summary(aes(x=species, y=eval(as.name(val_y))),fun.y=mean, geom="point", shape=20, size=5, color="red", fill="red") +
     labs(y=val_y)+
     theme_bw()
   
