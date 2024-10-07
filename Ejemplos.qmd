@@ -68,7 +68,7 @@ ggplot(tabla_medias)+
 
 # Intervalos de confianza (varianza conocida)
 
-Generamos $N=20$ muestras cada una de tamaño $n=100$ de una variable aleatoria $X\sim N(150, 15^2)$, luego, la distribución muestral es $\bar{X}\sim N(150, 15^2/100)$, se grafican los intervalos de confianza al 95% con $z_{crit}=`r round(qnorm(0.95), 4)`$.
+Generamos $N=20$ muestras cada una de tamaño $n=100$ de una variable aleatoria $X\sim N(150, 15^2)$, luego, la distribución muestral es $\bar{X}\sim N(150, 15^2/100)$, se grafican los intervalos de confianza al 95% con $z_{crit}=`r round(qnorm(0.975), 4)`$.
 
 
 ```{r}
@@ -92,7 +92,7 @@ muestra$Muestra <- factor(muestra$Muestra)
 tabla_resumen <- muestra |> group_by(Muestra) |> summarise(Media=mean(Valor), DS= sd(Valor))
 
 
-zcrit <- qnorm(0.95)
+zcrit <- qnorm(0.975)
 
 
 tabla_resumen <- tabla_resumen |> mutate(lower= Media-zcrit* 15/ sqrt(n), upper= Media+zcrit* 15/ sqrt(n))
@@ -111,6 +111,7 @@ Con barras de error:
 ```{r}
 #| code-fold: true
 ggplot(tabla_resumen)+
+  #geom_col(aes(Muestra, Media), fill="deeppink", alpha=0.5, color="black")+
   geom_errorbar(aes(Muestra, ymin= lower, ymax=upper, color=Muestra), show.legend = FALSE, width=0.5)+
   geom_point(aes(Muestra, Media, color=Muestra), show.legend = FALSE, size=1.8)+
   geom_hline(aes(yintercept = media), color="firebrick", linetype=2)+
@@ -124,7 +125,7 @@ ggplot(tabla_resumen)+
 
 # Intervalos de confianza (varianza desconocida)
 
-Se grafican los intervalos de confianza al 95% con $t_{crit}=`r round(qt(0.95, 99), 4)`$.
+Se grafican los intervalos de confianza al 95% con $t_{crit}=`r round(qt(0.975, 99), 4)`$.
 
 
 
@@ -132,7 +133,7 @@ Se grafican los intervalos de confianza al 95% con $t_{crit}=`r round(qt(0.95, 9
 #| code-fold: true
 
 
-tcrit <- qt(0.95, 99)
+tcrit <- qt(0.975, 99)
 
 
 tabla_resumen <- tabla_resumen |> mutate(t_lower= Media-tcrit* DS/ sqrt(n), t_upper= Media+tcrit* DS/ sqrt(n))
@@ -159,3 +160,26 @@ ggplot(tabla_resumen)+
 
 
 # Teorema central del límite
+
+Consideremos $X\sim Poisson(2.5)$, la función de probabilidad:
+
+
+
+```{r}
+#| code-fold: true
+
+tabla_poisson <- tibble(x=0:10, prob=dpois(x, 2.5))
+
+
+ggplot(tabla_poisson)+
+  geom_segment(aes(x=x, xend=x, y=0, yend=prob), color="yellow3")+
+  geom_point(aes(x, prob), color="red", size=2)+
+  theme_bw()
+
+```
+
+
+
+
+
+
