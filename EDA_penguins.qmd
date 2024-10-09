@@ -933,3 +933,82 @@ mapa
 
 #ggsave("heatmap_1.jpg", mapa, scale=1, dpi = 320)
 ```
+
+
+
+# Preliminares para prueba de hipótesis
+
+Calculamos la media de masa corporal por especie.
+
+
+```{r}
+#| code-fold: true
+
+resumen_mass <- data_complete |> group_by(species) |> summarise(Conteo=n(), Media_masa=mean(body_mass_g), sd_masa=sd(body_mass_g))
+resumen_mass
+
+```
+
+```{r}
+#| code-fold: true
+
+graf_den <- ggplot()+
+  geom_function(fun=dnorm, color="firebrick", args = list(mean = 3733, sd = 385/10), xlim=c(3613,  3853))+
+  stat_function(fun=dnorm, color="firebrick", args = list(mean = 3733, sd = 385/10), xlim=c(3613,  3706), geom="area", fill="olivedrab3")+
+  theme_bw()
+
+
+graf_den
+
+
+pnorm(3706, mean=3733, sd=385/10)
+```
+
+Utilizando Z-values
+
+
+```{r}
+#| code-fold: true
+
+#mean = 3733, sd = 385/10
+z_value1 <- (3706-3733)/38.5
+
+z_value1
+
+
+graf_den <- ggplot()+
+  geom_function(fun=dnorm, color="firebrick", args = list(mean = 0, sd = 1), xlim=c(-3,  3))+
+  stat_function(fun=dnorm, color="firebrick", args = list(mean = 0, sd = 1), xlim=c(-3,  z_value1), geom="area", fill="olivedrab3")+
+  stat_function(fun=dnorm, color="firebrick", args = list(mean = 0, sd = 1), xlim=c(-1*z_value1, 3), geom="area", fill="olivedrab3")+
+  theme_bw()
+
+
+graf_den
+```
+
+
+T test con masa especie Adelie
+
+
+```{r}
+#| code-fold: true
+
+data_Adelie <- data_complete |> filter(species=="Adelie")
+
+t.test(data_Adelie$body_mass_g, mu=3733)
+
+
+pt(-0.70703, 145)*2
+```
+
+
+
+
+
+
+
+
+
+
+
+

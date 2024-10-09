@@ -177,8 +177,36 @@ ggplot(tabla_poisson)+
   theme_bw()
 
 ```
+Generamos múltiples muestras ($N$) y verificamos que $\bar{X}\sim N(2.5, 2.5/100)$, donde $n=100$ es el tamaño de cada muestra.
 
 
+```{r}
+#| code-fold: true
+N <- 500
+n <- 100
+
+media <- 2.5
+
+muestra <- tibble(Valor= rpois(n, media), Muestra=1)
+
+for (j in 2:N) {
+  muestra_prev <- tibble(Valor=rpois(n, media), Muestra= j)
+  muestra <- bind_rows(muestra, muestra_prev)
+}
+
+muestra$Muestra <- factor(muestra$Muestra)
+tabla_resumen <- muestra |> group_by(Muestra) |> summarise(Media=mean(Valor), DS= sd(Valor))
+
+ggplot(tabla_resumen)+
+  geom_histogram(aes(Media, y=after_stat(density)), fill="deeppink", color="black")+
+  geom_function(fun=dnorm, color="firebrick", args = list(mean = 2.5, sd = sqrt(2.5/100)), xlim=c(2,  3))+
+  theme_bw()
+
+# tabla_resumen |> filter(Media<2)
+# muestra |> filter(Muestra==107) |> ggplot()+
+#   geom_histogram(aes(Valor),  fill="green", color="black")+
+#   theme_bw()
+```
 
 
 
