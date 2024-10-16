@@ -32,6 +32,9 @@ library(scatterPlotMatrix)
 library(readxl)
 library(writexl)
 
+library(multcomp)
+library(agricolae)
+
 ```
 
 
@@ -55,6 +58,8 @@ glimpse(datos)
 
 ```{r}
 datos <- datos[complete.cases(datos), ]
+datos$Delta_mass <- rnorm(nrow(datos), mean=10, sd=7)
+datos <- datos |> mutate(mass_after= body_mass_g+Delta_mass)
 
 glimpse(datos)
 ```
@@ -204,6 +209,73 @@ t.test(body_mass_g ~ species, data=datos_Adelie_Gentoo, alternative="two.sided")
 
 ```
 
+## t-test flipper length
+
+
+
+```{r}
+#| code-fold: true
+
+ggplot(datos_Adelie_Gentoo)+
+  geom_density(aes(flipper_length_mm, fill=species, color=species), alpha=0.5)+
+  theme_bw()
+
+t.test(flipper_length_mm ~ species, data= datos_Adelie_Gentoo, alternative="two.sided")
+
+```
+
+
+
+# Comparación t-test Adelie-Chinstrap
+
+
+## Filtro
+
+```{r}
+#| code-fold: true
+
+datos_Adelie_Chinstrap <- datos |> filter(species %in% c("Adelie", "Chinstrap"))
+
+levels(datos_Adelie_Chinstrap$species)
+
+datos_Adelie_Chinstrap$species <- factor(datos_Adelie_Chinstrap$species)
+
+levels(datos_Adelie_Chinstrap$species)
+```
+
+
+## t test body_mass
+
+```{r}
+#| code-fold: true
+
+ggplot(datos_Adelie_Chinstrap)+
+  geom_violin(aes(species, body_mass_g, fill=species), alpha=0.5, show.legend = FALSE)+
+  theme_bw()
+
+
+
+t.test(body_mass_g ~ species, data=datos_Adelie_Chinstrap, alternative="two.sided")
+
+```
+
+
+# t-test emparejada
+
+
+```{r}
+#| code-fold: true
+
+datos <- datos |> mutate(Diferencia=body_mass_g- mass_after)
+
+t.test(datos$body_mass_g, datos$mass_after, alternative = "two.side", paired=TRUE)
+
+
+
+```
+
+
+
 
 
 
@@ -238,3 +310,180 @@ test_corr
 corrplot(cor_mat, p.mat= test_corr$p, method = "color")
 
 ```
+
+## Anova: Paso a paso
+
+Diferencia de body_mass_g entre especies (3 grupos)
+
+```{r}
+#| code-fold: true
+
+ggplot(datos)+
+    geom_boxplot(aes(x=species, y=body_mass_g, color = species), show.legend = FALSE)+
+    stat_summary(aes(x=species, y=body_mass_g),fun=mean, geom="point", shape=20, size=5, color="red", fill="red") +
+    theme_bw()
+```
+
+
+
+### Variación entre grupos
+
+
+```{r}
+#| code-fold: true
+
+
+media_total <- mean(datos$body_mass_g)
+ssb_tabla <- datos |> group_by(species) |> summarise(conteo=n(), media_grupo=mean(body_mass_g))
+ssb_tabla <- ssb_tabla |> mutate(dif_sq_n=conteo*(media_grupo-media_total)^2)
+ssb <- sum(ssb_tabla$dif_sq_n)
+
+```
+
+
+### Variación en los grupos
+
+
+```{r}
+#| code-fold: true
+
+media_adelie <- ssb_tabla$media_grupo[1]
+media_chinstrap <- ssb_tabla$media_grupo[2]
+media_gentoo <- ssb_tabla$media_grupo[3]
+
+
+ssw_tabla <- datos |> dplyr::select(species, body_mass_g)
+ssw_tabla$df_sq_g <- 0
+ssw_tabla <- ssw_tabla |> mutate(df_sq_g=if_else(species=="Adelie", (body_mass_g-media_adelie)^2, df_sq_g)) 
+ssw_tabla <- ssw_tabla |> mutate(df_sq_g=if_else(species=="Chinstrap", (body_mass_g-media_chinstrap)^2, df_sq_g)) 
+ssw_tabla <- ssw_tabla |> mutate(df_sq_g=if_else(species=="Gentoo", (body_mass_g-media_gentoo)^2, df_sq_g))
+
+ssw <- sum(ssw_tabla$df_sq_g)
+
+
+```
+
+
+## Estadística F y cálculo de p-value
+
+
+
+```{r}
+#| code-fold: true
+
+mean_sq <- ssb/2
+emc <- ssw/(nrow(datos)-3)
+est_f <- mean_sq/emc
+
+
+df_1 <- 2
+df_2 <- nrow(datos)-3
+
+
+graf_den <- ggplot()+
+  geom_function(fun=df, color="firebrick", args = list( df1= df_1, df2=df_2), xlim=c(0,  6))+
+  # stat_function(fun=dnorm, color="firebrick", args = list(mean = 0, sd = 1), xlim=c(-3,  z_value1), geom="area", fill="olivedrab3")+
+  # stat_function(fun=dnorm, color="firebrick", args = list(mean = 0, sd = 1), xlim=c(-1*z_value1, 3), geom="area", fill="olivedrab3")+
+  theme_bw()
+
+
+graf_den
+
+
+valor_p <- pf(est_f, df_1, df_2, lower.tail = FALSE)
+
+
+valor_p
+
+```
+
+## Anova con la función aov
+
+
+```{r}
+anova_res <- aov(body_mass_g~ species, data=datos)
+anova_res
+summary(anova_res)
+```
+
+
+
+## Prueba de Tukey
+
+
+```{r}
+#| code-fold: true
+
+parejas_tukey <- glht(anova_res, linfct = mcp(species = "Tukey"))
+parejas_tukey
+   lab_data_aov <- cld(parejas_tukey)$mcletters$Letters %>% as.vector()
+   
+   margen <- par(oma=c(0,5,0,0))
+   plot(config(parejas_tukey), xlab=NULL)
+   par(margen)
+   
+   
+data_Q75 <- datos %>% group_by(species) %>% summarise(Q75=quantile(body_mass_g, 0.75, na.rm = TRUE))
+
+  data_lab <-  data.frame(
+  x=0.75:2.75,
+  y=data_Q75$Q75,
+  lab=lab_data_aov
+)
+
+
+
+
+tn_box <- ggplot(datos, aes(x=species,body_mass_g))+
+  geom_boxplot(aes(color=species), show.legend = FALSE)+
+  geom_text(data=data_lab, aes(x,y,label=lab), size=6, vjust=-0.2)+
+  theme_bw()+
+  theme(
+#plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+legend.position="top",
+legend.title = element_blank(),
+legend.text = element_text(size=12),
+axis.text.x=element_text(size=12),
+axis.text.y=element_text(size=12),
+axis.title.x = element_text(face="bold", size=14),
+axis.title.y = element_text(face="bold", size=14),
+strip.text.x = element_text(size = 12)
+)
+
+
+
+tn_box 
+
+
+   
+   
+
+
+```
+
+
+
+### Otras funciones para el Tukey test
+
+```{r}
+#| code-fold: true
+
+tukey_2 <- TukeyHSD(anova_res)
+tukey_2
+
+plot(tukey_2)
+
+```
+
+```{r}
+#| code-fold: true
+
+tukey_3 <- HSD.test(anova_res, trt='species')
+tukey_3
+
+plot(tukey_3)
+
+```
+
+
+
