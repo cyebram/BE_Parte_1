@@ -338,7 +338,14 @@ ssb_tabla <- datos |> group_by(species) |> summarise(conteo=n(), media_grupo=mea
 ssb_tabla <- ssb_tabla |> mutate(dif_sq_n=conteo*(media_grupo-media_total)^2)
 ssb <- sum(ssb_tabla$dif_sq_n)
 
+
+ssb_tabla
 ```
+
+
+body_mass_g media (sin considerar especies): `r round(media_total, 3)`
+
+Variación entre los grupos: `r round(ssb, 3)`
 
 
 ### Variación en los grupos
@@ -362,6 +369,11 @@ ssw <- sum(ssw_tabla$df_sq_g)
 
 
 ```
+
+Variación en los grupos: `r round(ssw, 3)`
+
+
+
 
 
 ## Estadística F y cálculo de p-value
@@ -401,6 +413,8 @@ valor_p
 
 
 ```{r}
+#| code-fold: true
+
 anova_res <- aov(body_mass_g~ species, data=datos)
 anova_res
 summary(anova_res)
@@ -415,7 +429,7 @@ summary(anova_res)
 #| code-fold: true
 
 parejas_tukey <- glht(anova_res, linfct = mcp(species = "Tukey"))
-parejas_tukey
+summary(parejas_tukey)
    lab_data_aov <- cld(parejas_tukey)$mcletters$Letters %>% as.vector()
    
    margen <- par(oma=c(0,5,0,0))
