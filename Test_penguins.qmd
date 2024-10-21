@@ -499,5 +499,152 @@ plot(tukey_3)
 
 ```
 
+## Regresión lineal simple (paso a paso)
 
+Consideremos como variable de respuesta `body_mass_g` y como predictor a `flipper_length_mm`.
+
+```{r}
+ggplot(datos)+
+    geom_point(aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+    geom_smooth(aes(x = flipper_length_mm, y = body_mass_g), method = "lm") +
+    #labs(x = val_x, y = val_y, color = "Species") +
+    scale_color_colorblind()+
+    theme_bw()
+```
+
+
+
+
+Calculamos la media de cada variable:
+
+```{r}
+#| code-fold: true
+
+media_x <- mean(datos$flipper_length_mm)
+
+media_x
+
+media_y <- mean(datos$body_mass_g)
+
+media_y
+
+
+```
+
+
+
+Calculamos la diferencia de las medias para cada variable, el cuadrado de las diferencias y el producto de las desviaciones:
+
+
+
+```{r}
+#| code-fold: true
+
+
+datos_slm <- datos |> dplyr::select(species, flipper_length_mm, body_mass_g)
+datos_slm <- datos_slm |> mutate(dif_x=flipper_length_mm-media_x, dif_x2=dif_x^2,
+                                 dif_y=body_mass_g-media_y, dif_y2=dif_y^2, dif_xy=dif_x*dif_y)
+
+
+```
+
+
+Se estiman los coeficientes:
+
+
+
+```{r}
+#| code-fold: true
+
+b_1 <- sum(datos_slm$dif_xy)/sum(datos_slm$dif_x2)
+b_1
+
+b_0 <- media_y-b_1*media_x
+
+b_0
+
+
+```
+
+Se estiman los valores con el modelo, se calcula el error para cada observación y el cuadradrado:
+
+```{r}
+#| code-fold: true
+
+
+datos_slm <- datos_slm |> mutate(body_est=b_0+b_1*flipper_length_mm, error=body_mass_g-body_est, error_sq=error^2)
+```
+
+
+Se calculan: RSS, RSE, SE($\beta_0$), SE($\beta_1$), las estadísticas t para cada coeficiente,  sus p-values y los respectivos intervalos de confianza:
+
+
+
+
+```{r}
+RSS <- sum(datos_slm$error_sq)
+RSS
+
+RSE <- sqrt(RSS/(nrow(datos_slm)-2))
+RSE
+
+SE_b0 <- RSE*sqrt(1/nrow(datos_slm)+ media_x^2/sum(datos_slm$dif_x2))
+SE_b0
+
+SE_b1 <- RSE/sqrt(sum(datos_slm$dif_x2))
+SE_b1
+
+
+t_b0 <- b_0/SE_b0
+t_b0
+
+t_b1 <- b_1/SE_b1
+t_b1
+
+
+b0_pval <- pt(abs(t_b0), nrow(datos_slm)-2, lower.tail = FALSE)
+b0_pval
+
+b1_pval <- pt(abs(t_b1), nrow(datos_slm)-2, lower.tail = FALSE)
+b1_pval
+
+
+lower_b0 <- b_0- qt(0.975, nrow(datos_slm)-2)*SE_b0
+lower_b0
+
+upper_b0 <- b_0+ qt(0.975, nrow(datos_slm)-2)*SE_b0
+upper_b0
+
+
+lower_b1 <- b_1- qt(0.975, nrow(datos_slm)-2)*SE_b1
+lower_b1
+
+upper_b1 <- b_1+ qt(0.975, nrow(datos_slm)-2)*SE_b1
+upper_b1
+
+```
+
+Cálculo de $R^2$, la estadística $F$ y el respectivo p-value
+
+
+```{r}
+TSS <- sum(datos_slm$dif_y2)
+R_sq <- (TSS-RSS)/TSS
+R_sq
+
+
+F_est <- (TSS-RSS)/(RSS/(nrow(datos_slm)-2))
+F_est
+F_pval <- pf(F_est, 1, 331, lower.tail = FALSE)
+F_pval
+```
+
+
+Distribución de los residuos
+
+
+
+```{r}
+summary(datos_slm$error)
+```
 
